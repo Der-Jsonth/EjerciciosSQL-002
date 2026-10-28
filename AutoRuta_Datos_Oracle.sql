@@ -1,0 +1,156 @@
+-- TALLER SQL | CONCESIONARIA AUTORUTA
+-- MOTOR: ORACLE DATABASE. Ejecutar como script (F5) en Oracle SQL Developer.
+-- ADVERTENCIA: ejecutar en un esquema de PRACTICA; elimina y recrea solamente
+-- las tablas CA_ de este ejercicio. Nunca ejecutar en un esquema productivo.
+-- Los datos personales, comerciales y vehiculos son completamente ficticios.
+
+-- 1. ELIMINAR TABLAS SI YA EXISTEN (ignorar solamente ORA-00942)
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE CA_CATALOGO_PROMO CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE CA_VENTA CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE CA_VEHICULO CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE CA_VENDEDOR CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+BEGIN
+  EXECUTE IMMEDIATE 'DROP TABLE CA_CLIENTE CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN
+  IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+-- 2. MODELO RELACIONAL (creado previamente para los estudiantes)
+CREATE TABLE CA_VEHICULO (
+    id_vehiculo     NUMBER(4)     NOT NULL,
+    marca           VARCHAR2(30)  NOT NULL,
+    modelo          VARCHAR2(35)  NOT NULL,
+    anio            NUMBER(4)     NOT NULL,
+    tipo            VARCHAR2(20)  NOT NULL,
+    estado          VARCHAR2(10)  NOT NULL,
+    precio_lista    NUMBER(11)    NOT NULL,
+    bono_marca      NUMBER(9),
+    kilometraje     NUMBER(8)     NOT NULL,
+    CONSTRAINT PK_CA_VEHICULO PRIMARY KEY (id_vehiculo),
+    CONSTRAINT CK_CA_VEH_PRECIO CHECK (precio_lista > 0),
+    CONSTRAINT CK_CA_VEH_BONO CHECK (bono_marca >= 0),
+    CONSTRAINT CK_CA_VEH_KM CHECK (kilometraje >= 0),
+    CONSTRAINT CK_CA_VEH_EST CHECK (estado IN ('Nuevo','Usado'))
+);
+
+CREATE TABLE CA_CLIENTE (
+    id_cliente      NUMBER(4)      NOT NULL,
+    nombre          VARCHAR2(30)   NOT NULL,
+    apellido        VARCHAR2(30)   NOT NULL,
+    ciudad          VARCHAR2(40)   NOT NULL,
+    correo          VARCHAR2(100)  NOT NULL,
+    telefono        VARCHAR2(15),
+    CONSTRAINT PK_CA_CLIENTE PRIMARY KEY (id_cliente),
+    CONSTRAINT UN_CA_CLIENTE_CORREO UNIQUE (correo)
+);
+
+CREATE TABLE CA_VENDEDOR (
+    id_vendedor     NUMBER(4)    NOT NULL,
+    nombre          VARCHAR2(30) NOT NULL,
+    apellido        VARCHAR2(30) NOT NULL,
+    sueldo_base     NUMBER(9)    NOT NULL,
+    comision_pct    NUMBER(5,2) NOT NULL,
+    CONSTRAINT PK_CA_VENDEDOR PRIMARY KEY (id_vendedor),
+    CONSTRAINT CK_CA_VEND_SUELDO CHECK (sueldo_base > 0),
+    CONSTRAINT CK_CA_VEND_COMIS CHECK (comision_pct BETWEEN 0 AND 100)
+);
+
+CREATE TABLE CA_VENTA (
+    id_venta        NUMBER(5)    NOT NULL,
+    id_vehiculo     NUMBER(4)    NOT NULL,
+    id_cliente      NUMBER(4)    NOT NULL,
+    id_vendedor     NUMBER(4)    NOT NULL,
+    fecha_venta     DATE         NOT NULL,
+    precio_base     NUMBER(11)   NOT NULL,
+    descuento_pct   NUMBER(5,2)  NOT NULL,
+    costo_gestion   NUMBER(9),
+    CONSTRAINT PK_CA_VENTA PRIMARY KEY (id_venta),
+    CONSTRAINT UN_CA_VENTA_VEH UNIQUE (id_vehiculo),
+    CONSTRAINT FK_CA_VENTA_VEH FOREIGN KEY (id_vehiculo)
+      REFERENCES CA_VEHICULO(id_vehiculo),
+    CONSTRAINT FK_CA_VENTA_CLI FOREIGN KEY (id_cliente)
+      REFERENCES CA_CLIENTE(id_cliente),
+    CONSTRAINT FK_CA_VENTA_VEND FOREIGN KEY (id_vendedor)
+      REFERENCES CA_VENDEDOR(id_vendedor),
+    CONSTRAINT CK_CA_VENTA_PRECIO CHECK (precio_base > 0),
+    CONSTRAINT CK_CA_VENTA_DESC CHECK (descuento_pct BETWEEN 0 AND 100),
+    CONSTRAINT CK_CA_VENTA_GEST CHECK (costo_gestion >= 0)
+);
+
+-- 3. REGISTROS DE PRUEBA
+
+-- CA_VEHICULO: 16 registros
+INSERT INTO CA_VEHICULO VALUES (101, 'Suzuki', 'Swift', 2023, 'Hatchback', 'Usado', 12990000, NULL, 35000);
+INSERT INTO CA_VEHICULO VALUES (102, 'Toyota', 'Corolla', 2025, 'Sedan', 'Nuevo', 23990000, 500000, 0);
+INSERT INTO CA_VEHICULO VALUES (103, 'Hyundai', 'Tucson', 2024, 'SUV', 'Usado', 20990000, 300000, 18000);
+INSERT INTO CA_VEHICULO VALUES (104, 'Kia', 'Morning', 2025, 'Hatchback', 'Nuevo', 11990000, NULL, 0);
+INSERT INTO CA_VEHICULO VALUES (105, 'Nissan', 'Versa', 2024, 'Sedan', 'Nuevo', 15990000, 250000, 0);
+INSERT INTO CA_VEHICULO VALUES (106, 'Toyota', 'RAV4', 2025, 'SUV', 'Nuevo', 32990000, 750000, 0);
+INSERT INTO CA_VEHICULO VALUES (107, 'Mazda', 'CX-5', 2022, 'SUV', 'Usado', 18990000, NULL, 46000);
+INSERT INTO CA_VEHICULO VALUES (108, 'Chevrolet', 'Onix', 2024, 'Hatchback', 'Nuevo', 13990000, 300000, 0);
+INSERT INTO CA_VEHICULO VALUES (109, 'Hyundai', 'Accent', 2021, 'Sedan', 'Usado', 9990000, NULL, 62000);
+INSERT INTO CA_VEHICULO VALUES (110, 'Suzuki', 'Vitara', 2025, 'SUV', 'Nuevo', 21990000, 450000, 0);
+INSERT INTO CA_VEHICULO VALUES (111, 'Kia', 'Seltos', 2024, 'SUV', 'Usado', 17990000, NULL, 26000);
+INSERT INTO CA_VEHICULO VALUES (112, 'Nissan', 'Kicks', 2025, 'SUV', 'Nuevo', 20490000, 350000, 0);
+INSERT INTO CA_VEHICULO VALUES (113, 'Mazda', 'Mazda3', 2023, 'Sedan', 'Usado', 16490000, NULL, 31000);
+INSERT INTO CA_VEHICULO VALUES (114, 'Chevrolet', 'Tracker', 2025, 'SUV', 'Nuevo', 22990000, 400000, 0);
+INSERT INTO CA_VEHICULO VALUES (115, 'Toyota', 'Yaris', 2026, 'Hatchback', 'Nuevo', 17990000, 200000, 0);
+INSERT INTO CA_VEHICULO VALUES (116, 'Kia', 'Sonet', 2025, 'SUV', 'Nuevo', 17490000, 200000, 0);
+
+-- CA_CLIENTE: 9 registros
+INSERT INTO CA_CLIENTE VALUES (201, 'Camila', 'Rojas', 'Santiago', 'camila.rojas@example.com', '912345678');
+INSERT INTO CA_CLIENTE VALUES (202, 'Nicolas', 'Perez', 'Valparaiso', 'nicolas.perez@example.com', NULL);
+INSERT INTO CA_CLIENTE VALUES (203, 'Valentina', 'Soto', 'Santiago', 'valentina.soto@example.com', '923456789');
+INSERT INTO CA_CLIENTE VALUES (204, 'Diego', 'Munoz', 'Rancagua', 'diego.munoz@example.com', '934567890');
+INSERT INTO CA_CLIENTE VALUES (205, 'Fernanda', 'Castillo', 'Concepcion', 'fernanda.castillo@example.com', NULL);
+INSERT INTO CA_CLIENTE VALUES (206, 'Matias', 'Herrera', 'Santiago', 'matias.herrera@example.com', '945678901');
+INSERT INTO CA_CLIENTE VALUES (207, 'Rocio', 'Alvarez', 'La Serena', 'rocio.alvarez@example.com', '956789012');
+INSERT INTO CA_CLIENTE VALUES (208, 'Tomas', 'Silva', 'Vina del Mar', 'tomas.silva@example.com', '967890123');
+INSERT INTO CA_CLIENTE VALUES (209, 'Paula', 'Morales', 'Puente Alto', 'paula.morales@example.com', NULL);
+
+-- CA_VENDEDOR: 4 registros
+INSERT INTO CA_VENDEDOR VALUES (301, 'Andrea', 'Vega', 850000, 2.00);
+INSERT INTO CA_VENDEDOR VALUES (302, 'Felipe', 'Araya', 900000, 1.50);
+INSERT INTO CA_VENDEDOR VALUES (303, 'Daniela', 'Torres', 950000, 2.50);
+INSERT INTO CA_VENDEDOR VALUES (304, 'Cristobal', 'Reyes', 820000, 1.75);
+
+-- CA_VENTA: 10 registros
+INSERT INTO CA_VENTA VALUES (4001, 101, 201, 301, DATE '2026-09-03', 12990000, 5, 150000);
+INSERT INTO CA_VENTA VALUES (4002, 102, 202, 302, DATE '2026-09-05', 23990000, 10, NULL);
+INSERT INTO CA_VENTA VALUES (4003, 103, 203, 303, DATE '2026-09-08', 20990000, 0, 180000);
+INSERT INTO CA_VENTA VALUES (4004, 104, 204, 304, DATE '2026-09-10', 11990000, 8, NULL);
+INSERT INTO CA_VENTA VALUES (4005, 105, 205, 301, DATE '2026-09-14', 15990000, 5, 150000);
+INSERT INTO CA_VENTA VALUES (4006, 106, 201, 303, DATE '2026-09-17', 32990000, 10, 200000);
+INSERT INTO CA_VENTA VALUES (4007, 107, 206, 302, DATE '2026-10-02', 18990000, 7, NULL);
+INSERT INTO CA_VENTA VALUES (4008, 108, 207, 304, DATE '2026-10-06', 13990000, 0, 150000);
+INSERT INTO CA_VENTA VALUES (4009, 109, 208, 301, DATE '2026-10-11', 9990000, 6, 100000);
+INSERT INTO CA_VENTA VALUES (4010, 110, 203, 303, DATE '2026-10-18', 21990000, 5, NULL);
+
+COMMIT;
+
+-- 4. VALIDACION: se esperan 16 vehiculos, 9 clientes, 4 vendedores y 10 ventas.
+SELECT COUNT(*) AS VEHICULOS FROM CA_VEHICULO;
+SELECT COUNT(*) AS CLIENTES FROM CA_CLIENTE;
+SELECT COUNT(*) AS VENDEDORES FROM CA_VENDEDOR;
+SELECT COUNT(*) AS VENTAS FROM CA_VENTA;
